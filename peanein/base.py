@@ -38,7 +38,7 @@ class Marshalling:
         n, gid = self.parse_string(data, ptr)
         ptr += n + 2
         n, muid = self.parse_string(data, ptr)
-        # TODO extra size check here?
+        # maybe an extra size check here?
         return size, Stat(name, qid, length, mode, typ, dev, atime, mtime, uid, gid, muid)
 
     def serialize_uint(self, num, size):
