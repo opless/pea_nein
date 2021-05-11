@@ -55,7 +55,7 @@ class Protocol(Marshalling):
             return "#" + str(verb)
         return verbs[verb - self.Topenfd]
 
-    def read(self, count=1):
+    def read(self, count):
         data = self._channel.read(count)
         if data is None or len(data) != count:
             raise EOFError("Short Read.")

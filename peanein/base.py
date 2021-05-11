@@ -1,9 +1,14 @@
-class Marshalling:
+import sys
+def trace(s):
+    sys.stderr.write(s)
+    sys.stderr.write("\n")
 
+class Marshalling:
     def parse_uint(self, data, ptr, size) -> int:
         if (ptr + size) > len(data):
             raise IOError("Bad conversion")
-        return int.from_bytes(data[ptr:ptr + size], 'little', signed=False)
+        #return int.from_bytes(data[ptr:ptr + size], 'little', signed=False)
+        return int.from_bytes(data[ptr:ptr + size], 'little', False)
 
     def parse_string(self, data, ptr) -> (int, str):
         size = self.parse_uint(data, ptr, 2)
@@ -42,11 +47,11 @@ class Marshalling:
         return size, Stat(name, qid, length, mode, typ, dev, atime, mtime, uid, gid, muid)
 
     def serialize_uint(self, num, size):
-        return bytearray(int(num).to_bytes(size, 'little', signed=False))
+        return bytearray(int(num).to_bytes(size, 'little', False))
 
     def str_to_pas(self, text):
         bin_text = bytearray(text.encode('utf-8'))
-        size = bytearray(len(bin_text).to_bytes(2, 'little', signed=False))
+        size = bytearray(len(bin_text).to_bytes(2, 'little', False))
         data = size + bin_text
         return data
 
@@ -70,6 +75,7 @@ class Qid(Marshalling):
         self.type = filetype
         self.path = path
         self.version = version
+
 
     def serialize(self):
         # data = bytearray(self.type.to_bytes(1, byteorder='little', signed=False))
