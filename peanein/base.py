@@ -1,26 +1,37 @@
 import sys
+
+
 def trace(s):
     sys.stderr.write(s)
     sys.stderr.write("\n")
 
-class Marshalling:
+
+class Util:
+    def fatal(self, text: str):
+        if sys.implementation.name == "micropython":
+            raise Exception(text)
+        else:
+            raise IOError(text)
+
+
+class Marshalling(Util):
     def parse_uint(self, data, ptr, size) -> int:
         if (ptr + size) > len(data):
-            raise IOError("Bad conversion")
-        #return int.from_bytes(data[ptr:ptr + size], 'little', signed=False)
-        return int.from_bytes(data[ptr:ptr + size], 'little', False)
+            self.fatal("Bad conversion")
+        # return int.from_bytes(data[ptr:ptr + size], 'little', signed=False)
+        return int.from_bytes(data[ptr:ptr + size], 'little')
 
     def parse_string(self, data, ptr) -> (int, str):
         size = self.parse_uint(data, ptr, 2)
         ptr += 2
         if size > (len(data) - ptr):
-            raise IOError("Bad string size.")
+            self.fatal("Bad string size.")
         text = data[ptr:ptr + size]
         return size, text.decode('utf-8')
 
     def parse_qid(self, data, ptr):
         if (len(data) - ptr) < 13:
-            raise IOError("Bad Qid Size")
+            self.fatal("Bad Qid Size")
         filetype = self.parse_uint(data, ptr + 0, 1)
         version = self.parse_uint(data, ptr + 1, 4)
         path = self.parse_uint(data, ptr + 6, 8)
@@ -47,11 +58,11 @@ class Marshalling:
         return size, Stat(name, qid, length, mode, typ, dev, atime, mtime, uid, gid, muid)
 
     def serialize_uint(self, num, size):
-        return bytearray(int(num).to_bytes(size, 'little', False))
+        return bytearray(int(num).to_bytes(size, 'little'))
 
     def str_to_pas(self, text):
         bin_text = bytearray(text.encode('utf-8'))
-        size = bytearray(len(bin_text).to_bytes(2, 'little', False))
+        size = bytearray(len(bin_text).to_bytes(2, 'little'))
         data = size + bin_text
         return data
 
@@ -75,7 +86,6 @@ class Qid(Marshalling):
         self.type = filetype
         self.path = path
         self.version = version
-
 
     def serialize(self):
         # data = bytearray(self.type.to_bytes(1, byteorder='little', signed=False))
@@ -155,33 +165,33 @@ class Stat(Marshalling):
             self.name, self.uid, self.gid, self.muid)
 
 
-class FileSystemDriver:
+class FileSystemDriver(Util):
     def io_size(self) -> int:
-        raise IOError("IMPLEMENT ME: io_size")
+        self.fatal("IMPLEMENT ME: io_size")
 
     def reset(self):
-        raise IOError("IMPLEMENT ME: reset")
+        self.fatal("IMPLEMENT ME: reset")
 
     def get_root(self, name="") -> Qid:
-        raise IOError("IMPLEMENT ME: get_root")
+        self.fatal("IMPLEMENT ME: get_root")
 
     def has_entry(self, qid: Qid, name: str) -> bool:
-        raise IOError("IMPLEMENT ME: has_entry")
+        self.fatal("IMPLEMENT ME: has_entry")
 
     def get_qid(self, qid: Qid, name: str) -> Qid:
-        raise IOError("IMPLEMENT ME: get_qid")
+        self.fatal("IMPLEMENT ME: get_qid")
 
     def get_stat(self, qid: Qid) -> Stat:
-        raise IOError("IMPLEMENT ME: get_stat")
+        self.fatal("IMPLEMENT ME: get_stat")
 
     def open_file(self, qid: Qid, mode: int):
-        raise IOError("IMPLEMENT ME: open_file")
+        self.fatal("IMPLEMENT ME: open_file")
 
     def close_file(self, qid: Qid):
-        raise IOError("IMPLEMENT ME: close_file")
+        self.fatal("IMPLEMENT ME: close_file")
 
     def read_file(self, qid: Qid, offset: int, count: int) -> bytearray:
-        raise IOError("IMPLEMENT ME: read_file")
+        self.fatal("IMPLEMENT ME: read_file")
 
     def write_file(self, qid: Qid, offset: int, data: bytes) -> int:
-        raise IOError("IMPLEMENT ME: write_file")
+        self.fatal("IMPLEMENT ME: write_file")

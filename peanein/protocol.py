@@ -77,7 +77,7 @@ class Protocol(Marshalling):
         verb = self.parse_uint(self.read(1), 0, 1)
         tag = self.parse_uint(self.read(2), 0, 2)
         if (size + 4) > self._max_size:
-            raise IOError("Packet is oversized.")
+            self.fatal("Packet is oversized.")
         # read rest of packet
         data = self.read(size - 7)
 
@@ -85,9 +85,9 @@ class Protocol(Marshalling):
 
         is_client_message = (verb % 2) == 1
         if self.is_server and is_client_message:
-            raise IOError("Server got Client message.")
+            self.fatal("Server got Client message.")
         elif (not self.is_server) and (not is_client_message):
-            raise IOError("Client got Server Message.")
+            self.fatal("Client got Server Message.")
 
 
         ##################################################### Version
@@ -118,7 +118,7 @@ class Protocol(Marshalling):
         ##################################################### ERROR
         # Terror is illegal
         elif verb == self.Terror:
-            raise IOError("Terror is an illegal message. Aborting.")
+            self.fatal("Terror is an illegal message. Aborting.")
 
         #       size[4] Rerror tag[2] ename[s]
         elif verb == self.Rerror:
@@ -300,12 +300,12 @@ class Protocol(Marshalling):
         raise Exception("TODO: Implement")
 
     def Error(self, tag, ename, fatal=False):
-        #    raise IOError("Other end reports: '%s' #%d" % (ename, tag))
+        #    ("Other end reports: '%s' #%d" % (ename, tag))
         data = self.str_to_pas(ename)
         self.send(self.Rerror, tag, data)
 
         if fatal:
-            raise IOError(ename)
+            self.fatal(ename)
 
     def ServerFlush(self, tag, oldtag):
         raise Exception("TODO: Implement")
