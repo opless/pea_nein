@@ -2,7 +2,6 @@
 import sys, os, io
 import random
 
-import peanein.framing
 from peanein.server import Server
 from peanein.base import FileSystemDriver, Stat, Qid
 
@@ -17,13 +16,32 @@ class StdioWrapper:
         return os.write(1, s)
 
 
+class MicroPythonUart:
+    def __init__(self):
+        if sys.implementation.name != "micropython":
+            raise OSError("This is not micropython")
+        import machine
+        self.uart = machine.UART(0, 115200)
+
+    def read(self, n=32):
+        data = self.uart.read(n)
+        return data
+
+    def write(self, s):
+        n = self.uart.write(s)
+        return n
+
+
 def run():
     if sys.implementation.name == "micropython":
         import micropython
 
         micropython.kbd_intr(-1)
-        print("\n\n\n\nBREAK DISABLED. 9P SERVICE NOW READY.\n\n\n\n")
-        fd = peanein.framing.Framing(sys.stdin, sys.stdout)
+        os.dupterm(None, 1)  # disable REPL on UART(0)
+
+        fd = MicroPythonUart()
+        fd.write("\n\nREADY")
+
     else:
         fd = StdioWrapper()
 
@@ -35,6 +53,7 @@ def run():
         except Exception as e:
             if sys.implementation.name == "micropython":
                 sys.stdout.write("\n\n\nbailing - %s\n\n\n" % e)
+                os.dupterm(machine.UART(0, 115200), 1)
             else:
                 sys.stderr.write("bailing - %s\n\n\n" % e)
             break

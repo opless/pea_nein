@@ -1,4 +1,5 @@
 import binascii
+import os
 
 
 class Framing:
