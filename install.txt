@@ -1,0 +1,11 @@
+md peanein
+put ninepserial.py
+put noddy.py
+ls
+cd peanein
+ls
+lcd peanein
+lls
+mput .*py
+ls
+exit

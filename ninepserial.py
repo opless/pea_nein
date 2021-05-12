@@ -2,6 +2,7 @@
 import sys, os, io
 import random
 
+import peanein.framing
 from peanein.server import Server
 from peanein.base import FileSystemDriver, Stat, Qid
 
@@ -16,28 +17,13 @@ class StdioWrapper:
         return os.write(1, s)
 
 
-# NOTE: this does not work under unix micropython because sys.stdin is a TextIOWrapper
-
-class MicroPythonStdioWrapper:
-    def __init__(self):
-        if sys.implementation.name != "micropython":
-            raise OSError("This is not micropython")
-
-    def read(self, n=32):
-        data = sys.stdin.read(n)
-        return data
-
-    def write(self, s):
-        n = sys.stdout.write(s)
-        return n
-
-
 def run():
     if sys.implementation.name == "micropython":
         import micropython
 
         micropython.kbd_intr(-1)
-        fd = MicroPythonStdioWrapper()
+        print("\n\n\n\nBREAK DISABLED. 9P SERVICE NOW READY.\n\n\n\n")
+        fd = peanein.framing.Framing(sys.stdin, sys.stdout)
     else:
         fd = StdioWrapper()
 
@@ -48,8 +34,7 @@ def run():
             srv.next()
         except Exception as e:
             if sys.implementation.name == "micropython":
-                # we skip until we find a valid message?
-                pass
+                sys.stdout.write("\n\n\nbailing - %s\n\n\n" % e)
             else:
                 sys.stderr.write("bailing - %s\n\n\n" % e)
             break

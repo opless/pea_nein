@@ -57,8 +57,10 @@ class Protocol(Marshalling):
 
     def read(self, count):
         data = self._channel.read(count)
-        if data is None or len(data) != count:
-            raise EOFError("Short Read.")
+        if data is None:
+            self.fatal("NeinP.read: no data returned.")
+        elif data is None or len(data) != count:
+            self.fatal("NeinP.read: len(data) %d != count: %d." % (len(data), count))
         return data
 
     def write(self, data):
@@ -88,7 +90,6 @@ class Protocol(Marshalling):
             self.fatal("Server got Client message.")
         elif (not self.is_server) and (not is_client_message):
             self.fatal("Client got Server Message.")
-
 
         ##################################################### Version
         #       size[4] Tversion tag[2] msize[4] version[s]

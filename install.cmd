@@ -1,0 +1,1 @@
+mpfshell -o com7 -n -s install.txt

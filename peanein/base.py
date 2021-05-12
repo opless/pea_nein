@@ -17,7 +17,7 @@ class Util:
 class Marshalling(Util):
     def parse_uint(self, data, ptr, size) -> int:
         if (ptr + size) > len(data):
-            self.fatal("Bad conversion")
+            self.fatal("parse_uint: bad size.")
         # return int.from_bytes(data[ptr:ptr + size], 'little', signed=False)
         return int.from_bytes(data[ptr:ptr + size], 'little')
 
@@ -25,13 +25,13 @@ class Marshalling(Util):
         size = self.parse_uint(data, ptr, 2)
         ptr += 2
         if size > (len(data) - ptr):
-            self.fatal("Bad string size.")
+            self.fatal("parse_string: bad size.")
         text = data[ptr:ptr + size]
         return size, text.decode('utf-8')
 
     def parse_qid(self, data, ptr):
         if (len(data) - ptr) < 13:
-            self.fatal("Bad Qid Size")
+            self.fatal("parse_qid: bad size")
         filetype = self.parse_uint(data, ptr + 0, 1)
         version = self.parse_uint(data, ptr + 1, 4)
         path = self.parse_uint(data, ptr + 6, 8)
