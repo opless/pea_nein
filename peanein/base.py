@@ -1,11 +1,5 @@
 import sys
 
-
-def trace(s):
-    sys.stderr.write(s)
-    sys.stderr.write("\n")
-
-
 class Util:
     def fatal(self, text: str):
         if sys.implementation.name == "micropython":

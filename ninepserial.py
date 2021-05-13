@@ -1,6 +1,7 @@
 # /usr/bin/python3
 import sys, os, io
 import random
+import time
 
 from peanein.server import Server
 from peanein.base import FileSystemDriver, Stat, Qid
@@ -16,16 +17,42 @@ class StdioWrapper:
         return os.write(1, s)
 
 
+class MicroPythonStdio:
+    def __init__(self):
+        if sys.implementation.name != "micropython":
+            raise OSError("This is not micropython")
+
+    def read(self, n=-1):
+        return sys.stdin.buffer.read(n)
+
+    def write(self, s):
+        import machine
+        return machine.stdout_put(s)
+
+
 class MicroPythonUart:
     def __init__(self):
         if sys.implementation.name != "micropython":
             raise OSError("This is not micropython")
-        import machine
-        self.uart = machine.UART(0, 115200)
+        from machine import Pin, UART
 
-    def read(self, n=32):
-        data = self.uart.read(n)
-        return data
+        self.uart = UART(1, tx=1, rx=3, baudrate=115200)
+        key_1 = Pin(27, Pin.IN, Pin.PULL_UP)
+        key_2 = Pin(25, Pin.IN, Pin.PULL_UP)
+        key_3 = Pin(32, Pin.IN, Pin.PULL_UP)
+
+        if not (key_1.value() == 1 and key_2.value() == 1 and key_3.value() == 1):
+            raise Exception("UART issues.")
+
+    def read(self, n=32):  # We never return None/EOF
+        block = bytearray(n)
+        while len(block) == n:
+            if self.uart.any() > 0:
+                c = self.uart.read(1)
+                block[len(block)] = c
+            else:  # this is a terrible idea.
+                time.sleep(0.001)
+        return block
 
     def write(self, s):
         n = self.uart.write(s)
@@ -35,11 +62,9 @@ class MicroPythonUart:
 def run():
     if sys.implementation.name == "micropython":
         import micropython
-
         micropython.kbd_intr(-1)
-        os.dupterm(None, 1)  # disable REPL on UART(0)
 
-        fd = MicroPythonUart()
+        fd = MicroPythonStdio()
         fd.write("\n\nREADY")
 
     else:
@@ -51,14 +76,16 @@ def run():
         try:
             srv.next()
         except Exception as e:
+            fd.write("\n\n\n+++ BAILING: %s\n\n\n" % e)
             if sys.implementation.name == "micropython":
-                sys.stdout.write("\n\n\nbailing - %s\n\n\n" % e)
-                os.dupterm(machine.UART(0, 115200), 1)
-            else:
-                sys.stderr.write("bailing - %s\n\n\n" % e)
+                import machine
+                fd.write("\n\n\n\n* RESETTING *\n\n\n")
+                machine.reset()
             break
 
 
+# print("imported ninepserial...")
+# print(__name__)
 # Main
-if __name__ == '__main__':
+if __name__ == 'ninepserial':
     run()

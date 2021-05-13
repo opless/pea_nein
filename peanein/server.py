@@ -48,7 +48,7 @@ class Server(Protocol):
         if msize < self._max_size:
             self._max_size = msize
 
-        self.ClientVersion(tag, self._max_size, version)
+        self.ClientVersion(tag, self._max_size, '9P2000')
 
     def ClientVersion(self, tag, msize, version):
         # size[4]  Rversion  tag[2]  msize[4]  version[s]
@@ -201,3 +201,9 @@ class Server(Protocol):
     def ClientWriteStat(self, tag):
         self.send(self.Rwstat, tag)
 
+    def ServerFlush(self, tag, oldtag):
+        # we do nothing because we respond to events sequentially
+        self.ClientFlush(tag)
+
+    def ClientFlush(self, tag):
+        self.send(self.Rflush, tag)
