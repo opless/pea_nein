@@ -30,35 +30,6 @@ class MicroPythonStdio:
         return machine.stdout_put(s)
 
 
-class MicroPythonUart:
-    def __init__(self):
-        if sys.implementation.name != "micropython":
-            raise OSError("This is not micropython")
-        from machine import Pin, UART
-
-        self.uart = UART(1, tx=1, rx=3, baudrate=115200)
-        key_1 = Pin(27, Pin.IN, Pin.PULL_UP)
-        key_2 = Pin(25, Pin.IN, Pin.PULL_UP)
-        key_3 = Pin(32, Pin.IN, Pin.PULL_UP)
-
-        if not (key_1.value() == 1 and key_2.value() == 1 and key_3.value() == 1):
-            raise Exception("UART issues.")
-
-    def read(self, n=32):  # We never return None/EOF
-        block = bytearray(n)
-        while len(block) == n:
-            if self.uart.any() > 0:
-                c = self.uart.read(1)
-                block[len(block)] = c
-            else:  # this is a terrible idea.
-                time.sleep(0.001)
-        return block
-
-    def write(self, s):
-        n = self.uart.write(s)
-        return n
-
-
 def run():
     if sys.implementation.name == "micropython":
         import micropython
