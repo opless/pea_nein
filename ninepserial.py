@@ -30,14 +30,38 @@ class MicroPythonStdio:
         return machine.stdout_put(s)
 
 
-def run():
+class MicroPythonStdioNeoPixel:
+    def __init__(self):
+        if sys.implementation.name != "micropython":
+            raise OSError("This is not micropython")
+        import machine
+        self.neopixel = machine.Neopixel(27, 1)
+        self.rainbow = [machine.Neopixel.BLACK, machine.Neopixel.BLUE,
+                        machine.Neopixel.RED, machine.Neopixel.MAGENTA,
+                        machine.Neopixel.GREEN, machine.Neopixel.CYAN,
+                        machine.Neopixel.YELLOW, machine.Neopixel.WHITE]
+        self.pointer = 0
+
+    def next(self):
+        self.pointer = (self.pointer + 1) % len(self.rainbow)
+        self.neopixel.set(0, self.rainbow[self.pointer])
+
+    def read(self, n=-1):
+        self.next()
+        return sys.stdin.buffer.read(n)
+
+    def write(self, s):
+        self.next()
+        import machine
+        return machine.stdout_put(s)
+
+
+def start():
     if sys.implementation.name == "micropython":
         import micropython
+        # ignore break
         micropython.kbd_intr(-1)
-
-        fd = MicroPythonStdio()
-        fd.write("\n\nREADY")
-
+        fd = MicroPythonStdioNeoPixel()
     else:
         fd = StdioWrapper()
 
@@ -59,4 +83,4 @@ def run():
 # print(__name__)
 # Main
 if __name__ == 'ninepserial':
-    run()
+    start()
